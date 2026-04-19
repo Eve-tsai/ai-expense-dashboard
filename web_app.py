@@ -124,7 +124,7 @@ if not df.empty:
     st.markdown("### 💱 Currency Selection | 選擇顯示幣別")
     available_currencies = df['currency'].unique().tolist()
     default_idx = available_currencies.index('CAD') if 'CAD' in available_currencies else 0
-    selected_currency = st.radio("Current Currency / 目前結算幣別：", available_currencies, index=default_idx, horizontal=True)
+    selected_currency = st.radio("Current Currency | 目前結算幣別：", available_currencies, index=default_idx, horizontal=True)
     st.markdown("---")
     filtered_df = df[df['currency'] == selected_currency]
 
@@ -156,14 +156,14 @@ if not df.empty:
 
         with st.form(key=f'budget_form_{selected_currency}'):
             new_budget = st.number_input(
-                f"Set {selected_currency} Budget / 設定本月預算：",
+                f"Set {selected_currency} Budget | 設定本月預算：",
                 min_value=0.0,
                 value=db_budget,  
                 step=100.0
 
             )
 
-            submit_budget = st.form_submit_button(label="Save to Database / 確定並儲存")
+            submit_budget = st.form_submit_button(label="Save | 確定並儲存")
 
            
 
@@ -375,7 +375,7 @@ if not df.empty:
     def apply_morandi_table_style(styler):
         # 1. set the base style for the entire table (light beige background with soft gray-brown text)
         styler.set_properties(**{
-            'background-color': '#D4CFC9',  
+            'background-color': "#ECDFD5",  
             'color': '#4A4643',             
             'border-bottom': '1px solid #E8E4D9' 
         })
