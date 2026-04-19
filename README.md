@@ -14,8 +14,8 @@ Architected for seamless user experience, it integrates a **LINE messaging chatb
 
 This tool goes beyond simple expense logging by offering **AI-driven burn rate projections**, multi-currency dynamic budgeting, and dual-axis financial modeling.
 
-### 📸 Dashboard Preview
-> Released soon!!
+### 📸 Demo Video
+> (https://youtu.be/y-R1PI0yvtU)
 
 ---
 
