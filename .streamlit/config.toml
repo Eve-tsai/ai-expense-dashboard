@@ -1,0 +1,15 @@
+[theme]
+# 莫蘭迪主色調 (按鈕、拉桿、選取框的顏色：灰藍色)
+primaryColor = "#8B9DA3"
+
+# 網頁主要背景色 (莫蘭迪米白)
+backgroundColor = "#F4F1ED"
+
+# 側邊欄與區塊背景色 (稍微深一點的莫蘭迪暖灰)
+secondaryBackgroundColor = "#E8E4D9"
+
+# 主要文字顏色 (深棕灰，比純黑更柔和)
+textColor = "#4A4643"
+
+# 字體設定
+font = "sans serif"
