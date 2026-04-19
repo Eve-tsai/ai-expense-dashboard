@@ -10,7 +10,7 @@
 
 This project is an **End-to-End AI-powered Personal Finance Management System** designed to bridge the gap between daily habit tracking and high-level data visualization. 
 
-Architected for seamless user experience, it integrates a **LINE messaging chatbot** with Google's **Gemini LLM** to process natural language accounting inputs. The parsed data is persistently stored in a cloud-based **TiDB (MySQL)** database and visualized through an interactive, Morandi-themed **Streamlit** dashboard.
+Architected for seamless user experience, it integrates a **LINE messaging chatbot** (most popular messenger app in Taiwan) with Google's **Gemini LLM** to process natural language accounting inputs. The parsed data is persistently stored in a cloud-based **TiDB (MySQL)** database and visualized through an interactive, Morandi-themed **Streamlit** dashboard.
 
 This tool goes beyond simple expense logging by offering **AI-driven burn rate projections**, multi-currency dynamic budgeting, and dual-axis financial modeling.
 
