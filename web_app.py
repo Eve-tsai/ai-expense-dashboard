@@ -19,7 +19,7 @@ st.title("📊 AI 記帳助手 expense assistant - personal finance dashboard")
 st.markdown("---")
 
 # --- 2. database configuration ---
-DB_CONFIG = st.secrets["mysql"]
+DB_CONFIG = dict(st.secrets["mysql"])
 
 
 def get_db_connection():
