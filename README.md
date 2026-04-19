@@ -45,12 +45,14 @@ For developers or professors who wish to run this project locally:
 
 ### 1. Clone the repository
 ```bash
-git clone [https://github.com/YourUsername/ai-expense-dashboard.git](https://github.com/YourUsername/ai-expense-dashboard.git)
+git clone https://github.com/Eve-tsai/ai-expense-dashboard.git
 cd ai-expense-dashboard
+```
 
 ### 2. Install dependencies
 ```bash
 pip install -r requirements.txt
+```
 
 ### 3. Configure Secrets
 ```bash
@@ -62,11 +64,12 @@ user = "your_username"
 password = "your_password"
 database = "test"
 port = 4000
+```
 
 ### 4. Run the application
 ```bash
 streamlit run web_app.py
-
+```
 
 
 
