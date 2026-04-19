@@ -163,7 +163,7 @@ if not df.empty:
 
             )
 
-            submit_budget = st.form_submit_button(label="Save to Database / 確定並儲存")
+            submit_budget = st.form_submit_button(label="Save / 確定並儲存")
 
            
 
