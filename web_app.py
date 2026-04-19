@@ -375,7 +375,7 @@ if not df.empty:
     def apply_morandi_table_style(styler):
         # 1. set the base style for the entire table (light beige background with soft gray-brown text)
         styler.set_properties(**{
-            'background-color': '#D4CFC9',  
+            'background-color': '#D5C7BC',  
             'color': '#4A4643',             
             'border-bottom': '1px solid #E8E4D9' 
         })
