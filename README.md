@@ -47,3 +47,27 @@ For developers or professors who wish to run this project locally:
 ```bash
 git clone [https://github.com/YourUsername/ai-expense-dashboard.git](https://github.com/YourUsername/ai-expense-dashboard.git)
 cd ai-expense-dashboard
+
+### 2. Install dependencies
+```Bash
+pip install -r requirements.txt
+
+### 3. Configure Secrets
+Create a .streamlit/secrets.toml file in the root directory and add your database credentials:
+
+[mysql]
+host = "your_tidb_host"
+user = "your_username"
+password = "your_password"
+database = "test"
+port = 4000
+
+### 4. Run the application
+``` Bash
+streamlit run web_app.py
+
+
+
+
+
+
