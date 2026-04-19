@@ -55,9 +55,8 @@ pip install -r requirements.txt
 ```
 
 ### 3. Configure Secrets
-```bash
 Create a .streamlit/secrets.toml file in the root directory and add your database credentials:
-
+```bash
 [mysql]
 host = "your_tidb_host"
 user = "your_username"
