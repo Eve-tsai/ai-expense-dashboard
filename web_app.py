@@ -375,7 +375,7 @@ if not df.empty:
     def apply_morandi_table_style(styler):
         # 1. set the base style for the entire table (light beige background with soft gray-brown text)
         styler.set_properties(**{
-            'background-color': "#ECDFD5",  
+            'background-color': '#ECDFD5',  
             'color': '#4A4643',             
             'border-bottom': '1px solid #E8E4D9' 
         })
@@ -402,5 +402,3 @@ if not df.empty:
 else:
     st.info("👋 歡迎！目前資料庫是空的。請在 LINE 機器人輸入第一筆帳務（例如：今天晚餐 20 加幣）後重新整理此頁面。")
     st.info("👀 Welcome! The database is currently empty. Please input your first transaction through the LINE bot (e.g., 'Spent 20 Canadian Dollars for dinner today') and refresh this page.")
-
-
