@@ -49,10 +49,11 @@ git clone [https://github.com/YourUsername/ai-expense-dashboard.git](https://git
 cd ai-expense-dashboard
 
 ### 2. Install dependencies
-```Bash
+```bash
 pip install -r requirements.txt
 
 ### 3. Configure Secrets
+```bash
 Create a .streamlit/secrets.toml file in the root directory and add your database credentials:
 
 [mysql]
@@ -63,7 +64,7 @@ database = "test"
 port = 4000
 
 ### 4. Run the application
-``` Bash
+```bash
 streamlit run web_app.py
 
 
