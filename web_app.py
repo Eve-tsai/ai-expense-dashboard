@@ -19,7 +19,6 @@ st.markdown("---")
 # --- 2. database configuration ---
 DB_CONFIG = dict(st.secrets["mysql"])
 
-# 👇 定義全域的「付款方式選項」
 PAYMENT_METHODS = [
     "永豐信用卡 (SinoPac)", 
     "Revolut", 
@@ -39,7 +38,6 @@ def get_db_connection():
     config = DB_CONFIG.copy()
     if isinstance(config['password'], str):
         config['password'] = config['password'].encode('utf-8').decode('latin-1')
-    
     return pymysql.connect(
         **config,
         ssl_verify_cert=True,
@@ -68,7 +66,6 @@ def load_data():
 
         if not df.empty:
             df['amount_original'] = pd.to_numeric(df['amount_original'], errors='coerce').fillna(0)
-            # 防呆：確保新欄位存在，若資料庫尚未更新則給予預設值
             if 'payment_method' not in df.columns:
                 df['payment_method'] = "永豐信用卡 (SinoPac)"
             else:
@@ -264,7 +261,6 @@ if not df.empty:
     all_expense_df['date_str'] = pd.to_datetime(all_expense_df['transaction_date']).dt.strftime('%Y-%m-%d')
     all_expense_df['amount_rounded'] = all_expense_df['amount_original'].abs().round(2)
 
-    # 👇 把付款方式也加入重複比對條件，同一天用 BNP 跟 Revolut 各買 5 歐咖啡將不再被誤判為重複！
     dup_subset = ['date_str', 'amount_rounded', 'currency', 'payment_method']
     dup_mask = all_expense_df.duplicated(subset=dup_subset, keep=False)
     dup_df = all_expense_df[dup_mask].sort_values(['date_str', 'amount_rounded', 'display_id'])
@@ -317,6 +313,44 @@ if not df.empty:
 
     st.write("---")
 
+    # prediction and insights section
+    st.subheader("🔮 AI Prediction & Insights | 預測與消費洞察")
+
+    today = datetime.date.today()
+    _, days_in_month = calendar.monthrange(today.year, today.month)
+    days_passed = today.day
+
+    if days_passed > 0 and total_exp > 0:
+        daily_run_rate = total_exp / days_passed
+        projected_total = daily_run_rate * days_in_month
+        target_daily_rate = monthly_budget / days_in_month
+
+        p_col1, p_col2 = st.columns(2) 
+        with p_col1:
+            st.info(f"📈 **Current Run Rate | 目前日均花費:**\n\n{daily_run_rate:,.2f} {selected_currency} / Day\n\n*(Target | 每日目標: {target_daily_rate:,.2f})*")
+        with p_col2:
+            st.warning(f"🎯 **Projected Total | 本月預估總花費:**\n\n{projected_total:,.2f} {selected_currency}\n\n*(Budget | 總預算: {monthly_budget:,.2f})*")
+            
+        projected_balance = monthly_budget - projected_total
+        st.markdown(f"#### 🎯 Budget Achievement | 預算達成率分析 (Target: {monthly_budget:,.0f} {selected_currency})")
+            
+        if projected_total > monthly_budget:
+            overspend_amt = projected_total - monthly_budget
+            st.error(f"🚨 **警告 WARNING:** At the current burn rate, you will **overspend by {overspend_amt:,.2f} {selected_currency}**!\n\n💡 建議檢視近日的高額開銷 (如房租等一次性大筆支出會影響初期預測)。")
+        elif projected_total > (monthly_budget * 0.8):
+            st.warning(f"⚠️ **注意 CAUTION:** Projected spending has reached the 80% budget threshold!")
+        else:
+            st.success(f"✅ **安全 SAFE:** Good pacing! Projected month-end balance is **{projected_balance:,.2f} {selected_currency}**.")
+                
+        current_spend_ratio = min(total_exp / monthly_budget, 1.0) if monthly_budget > 0 else 0.0
+        st.write(f"Budget Consumed | 目前已消耗預算：**{current_spend_ratio * 100:.1f}%**")
+        st.progress(current_spend_ratio)
+
+    else:
+        st.info("💡 Unlock AI prediction features by accumulating more of this month's spending 累積更多本月支出後，即可解鎖 AI 預測功能")
+
+    st.markdown("---")
+
     # --- 5. Chart analysis ---
     c1, c2 = st.columns([1, 1])
     with c1:
@@ -334,7 +368,6 @@ if not df.empty:
             fig_pie = px.pie(chart_df, values='amount_original', names='category', hole=0.4, color_discrete_sequence=morandi_colors)
             fig_pie.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
             st.plotly_chart(fig_pie, use_container_width=True)
-
 
     with c2:
         st.subheader("📅 Daily & Cumulative Spend | 每日與累積支出走勢")
@@ -381,11 +414,9 @@ if not df.empty:
     styled_df['Amount 金額'] = pd.to_numeric(styled_df['Amount 金額'], errors='coerce').fillna(0)
     styled_df['Date 日期'] = pd.to_datetime(styled_df['Date 日期']).dt.date
 
-    # 👇 升級：動態產生下拉選單的「現有選項」(自動排序，乾乾淨淨)
     available_cats = sorted(styled_df['Category 分類'].unique().tolist())
     available_pays = sorted(styled_df['Payment 付款方式'].unique().tolist())
 
-    # 建立 3 欄式平衡版面 (日期欄位稍微給寬一點 1.5，放得下兩個日期)
     col_date, col_cat, col_pay = st.columns([1.5, 1, 1])
 
     with col_date:
@@ -399,8 +430,6 @@ if not df.empty:
     with col_pay:
         selected_pays = st.multiselect("💳 付款方式 (Payment)：", available_pays, placeholder="所有方式 (All)")
 
-    # --- 依序套用過濾條件 (Chain Filtering) ---
-    
     # 1. 過濾日期
     if len(date_range) == 2:
         mask = (styled_df['Date 日期'] >= date_range[0]) & (styled_df['Date 日期'] <= date_range[1])
@@ -409,15 +438,14 @@ if not df.empty:
         mask = (styled_df['Date 日期'] >= date_range[0])
         styled_df = styled_df.loc[mask]
 
-    # 2. 過濾分類 (如果有勾選的話)
+    # 2. 過濾分類
     if selected_cats:
         styled_df = styled_df[styled_df['Category 分類'].isin(selected_cats)]
 
-    # 3. 過濾付款方式 (如果有勾選的話)
+    # 3. 過濾付款方式
     if selected_pays:
         styled_df = styled_df[styled_df['Payment 付款方式'].isin(selected_pays)]
 
-    # 計算「當前畫面上篩選結果」的總金額
     if not styled_df.empty:
         totals_by_currency = styled_df.groupby('Currency 幣別')['Amount 金額'].sum()
         total_strings = [f"<span style='color: #A0522D; font-size: 1.1em;'>{amt:,.2f} {curr}</span>" for curr, amt in totals_by_currency.items()]
@@ -457,15 +485,18 @@ if not df.empty:
 
         # --- 1. Add function ---
         with tab_add:
+            if st.session_state.get("add_success_msg"):
+                st.success(st.session_state["add_success_msg"])
+                del st.session_state["add_success_msg"]
+
             with st.form("manual_add_form", clear_on_submit=True):
-                # 剛好左邊 3 個 input，右邊 3 個 input，視覺極度平衡！
                 col1, col2 = st.columns(2)
                 new_date = col1.date_input("日期 (Date)", datetime.date.today())
                 new_item = col2.text_input("品項 (Item)", placeholder="例如：晚餐、超市...")
                 new_cat = col1.selectbox("分類 (Category)", cat_options)
                 new_amt = col2.number_input("金額 (Amount)", min_value=0.0, step=1.0)
                 new_curr = col1.selectbox("幣別 (Currency)", curr_options)
-                new_pay = col2.selectbox("付款方式 (Payment Method)", PAYMENT_METHODS) # 👈 新增輸入
+                new_pay = col2.selectbox("付款方式 (Payment Method)", PAYMENT_METHODS)
 
                 submitted_add = st.form_submit_button("送出新增 (Submit)")
                 if submitted_add:
@@ -484,14 +515,15 @@ if not df.empty:
                         except Exception as e:
                             manual_id = f"M{target_mmdd}99" 
 
-                        # 👇 寫入 SQL 加入 payment_method
+                        db_clean_add_cat = new_cat.split()[0]
+
                         sql_insert = """
                             INSERT INTO test.daily_expenses
                             (display_id, transaction_date, item_description, category, amount_original, currency, payment_method)
                             VALUES (%s, %s, %s, %s, %s, %s, %s)
                         """
-                        if execute_manual_query(sql_insert, (manual_id, new_date, new_item, new_cat, new_amt, new_curr, new_pay)):
-                            st.success(f"✅ 成功新增 Success: {new_item} ({new_amt} {new_curr} via {new_pay}) | ID: {manual_id}")
+                        if execute_manual_query(sql_insert, (manual_id, new_date, new_item, db_clean_add_cat, new_amt, new_curr, new_pay)):
+                            st.session_state["add_success_msg"] = f"✅ 新增成功！已記錄：【{new_item}】 ({new_amt} {new_curr} via {new_pay})"
                             st.cache_data.clear()
                             st.rerun()
 
@@ -502,7 +534,6 @@ if not df.empty:
         else:
             options_list = ["尚無紀錄 (No records)"]; record_dict = {}
 
-       
         # --- 2. Edit function ---
         with tab_edit:
             if st.session_state.get("edit_success_msg"):
@@ -524,7 +555,6 @@ if not df.empty:
                     edit_date = col1.date_input("日期 (Date)", pd.to_datetime(target_row['transaction_date']))
                     edit_item = col2.text_input("品項 (Item)", value=target_row['item_description'])
                     
-                    # 👇 關鍵修復：把資料庫純中文(如 '生活')，透過 display_map 映射成 '生活 Living' 以精準對應下拉選單
                     mapped_cat = display_map.get(target_row['category'], target_row['category'])
                     default_cat_idx = cat_options.index(mapped_cat) if mapped_cat in cat_options else 0
                     edit_cat = col1.selectbox("分類 (Category)", cat_options, index=default_cat_idx)
@@ -545,9 +575,7 @@ if not df.empty:
                         if edit_item.strip() == "":
                             with warn_col: st.warning("⚠️ 請填寫品項名稱！")
                         else:
-                            # 👇 保持資料庫純淨：將 '生活 Living' 切割回純中文 '生活' 存入 MySQL
                             db_clean_cat = edit_cat.split()[0]
-
                             sql_update = """
                                 UPDATE test.daily_expenses
                                 SET transaction_date=%s, item_description=%s, category=%s, amount_original=%s, currency=%s, payment_method=%s
@@ -561,20 +589,88 @@ if not df.empty:
 
         # --- 3. Delete function ---
         with tab_delete:
+            if st.session_state.get("del_success_msg"):
+                st.success(st.session_state["del_success_msg"])
+                del st.session_state["del_success_msg"]
+
+            if st.session_state.get("need_reset_del"):
+                st.session_state["delete_select"] = options_list[0]
+                del st.session_state["need_reset_del"]
+
             selected_del = st.selectbox("選擇要刪除的紀錄 (Select to delete)", options_list, key="delete_select")
             if selected_del not in ["請選擇紀錄... (Select a record...)", "尚無紀錄 (No records)"]:
                 target_id_del = record_dict[selected_del]
                 st.error(f"⚠️ 確定要永久刪除此紀錄嗎？\n\n**{selected_del}**")
+                
                 if st.button("🚨 確認刪除 (Confirm Delete)", type="primary"):
                     if execute_manual_query("DELETE FROM test.daily_expenses WHERE display_id=%s", (target_id_del,)):
-                        st.success("✅ 刪除成功！"); st.cache_data.clear(); st.rerun()
+                        del_item_name = selected_del.split(" | ")[2].split(" (")[0]
+                        st.session_state["del_success_msg"] = f"✅ 刪除成功！已永久移除紀錄：【{del_item_name}】"
+                        st.session_state["need_reset_del"] = True
+                        st.cache_data.clear()
+                        st.rerun()
 
     # --- 7. All Transaction History ---
     with st.expander("🗂️ 查看所有月份紀錄 View All History"):
-        # ...(維持原樣)
-        st.info("歷史報表區塊維持原樣載入...")
+        summary_df = df.copy()
+        summary_df['transaction_date'] = pd.to_datetime(summary_df['transaction_date'])
+        summary_df['year_month'] = summary_df['transaction_date'].dt.to_period('M')
+        summary_df['amount_original'] = pd.to_numeric(summary_df['amount_original'], errors='coerce').fillna(0)
+
+        summary_df['amount_twd'] = summary_df.apply(
+            lambda row: row['amount_original'] * EXCHANGE_RATES.get(row['currency'], 1.0), axis=1
+        )
+
+        monthly_exp = summary_df[~summary_df['category'].isin(['收入', '轉帳'])].groupby('year_month')['amount_twd'].sum().rename('總支出_TWD')
+        monthly_inc = summary_df[summary_df['category'] == '收入'].groupby('year_month')['amount_twd'].sum().rename('總收入_TWD')
+        monthly_tra = summary_df[summary_df['category'] == '轉帳'].groupby('year_month')['amount_twd'].sum().rename('換匯流動_TWD')
+
+        currency_series_list = []
+        currency_col_names = []
+        for curr in EXCHANGE_RATES.keys():
+            curr_df = summary_df[summary_df['currency'] == curr]
+            if curr_df['amount_original'].abs().sum() == 0:
+                continue
+            exp = curr_df[~curr_df['category'].isin(['收入', '轉帳'])].groupby('year_month')['amount_original'].sum()
+            inc = curr_df[curr_df['category'] == '收入'].groupby('year_month')['amount_original'].sum()
+            tra = curr_df[curr_df['category'] == '轉帳'].groupby('year_month')['amount_original'].sum()
+            net = inc.subtract(exp, fill_value=0).add(tra, fill_value=0)
+            if net.abs().sum() > 0:
+                currency_series_list.append(net)
+                currency_col_names.append(f'Net {curr}')
+
+        base = pd.concat([monthly_exp, monthly_inc, monthly_tra], axis=1).fillna(0)
+        base.columns = ['Total Expense 總支出_TWD', 'Total Income 總收入_TWD', 'Transfer 換匯流動_TWD']
+        base['Net Flow 月淨流向_TWD'] = base['Total Income 總收入_TWD'] - base['Total Expense 總支出_TWD'] + base['Transfer 換匯流動_TWD']
+
+        for i, s in enumerate(currency_series_list):
+            base[currency_col_names[i]] = s
+
+        monthly_summary = base.fillna(0).sort_index(ascending=False).reset_index()
+        monthly_summary['year_month'] = monthly_summary['year_month'].astype(str)
+
+        monthly_summary.rename(columns={
+            'year_month': 'Month 月份',
+            '總支出_TWD': 'Total Expense 總支出 (TWD)',
+            '總收入_TWD': 'Total Income 總收入 (TWD)',
+            '換匯流動_TWD': 'Transfer 換匯流動 (TWD)',
+            '月淨流向_TWD': 'Net Flow 月淨流向 (TWD)',
+        }, inplace=True)
+
+        for col in monthly_summary.columns:
+            if col == 'Month 月份':
+                continue
+            vals = monthly_summary[col]
+            if isinstance(vals, pd.DataFrame):
+                monthly_summary[col] = vals.iloc[:, 0]
+            monthly_summary[col] = pd.to_numeric(monthly_summary[col], errors='coerce').fillna(0)
+            if 'TWD' in col:
+                monthly_summary[col] = monthly_summary[col].apply(lambda x: f"{x:,.0f}")
+            else:
+                monthly_summary[col] = monthly_summary[col].apply(lambda x: f"{x:,.2f}")
+
+        st.caption(f"共 {len(monthly_summary)} 個月份紀錄 | {len(monthly_summary)} months  💡 Net XXX 欄位為各幣別收入減支出加換匯的原幣淨值，TWD 欄位為換算後總計")
+        st.table(monthly_summary.style.pipe(apply_morandi_table_style).hide(axis="index"))
 
 else:
     st.info("👋 歡迎！目前資料庫是空的。請輸入第一筆帳務後重新整理。")
-
-    
