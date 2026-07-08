@@ -1,10 +1,13 @@
 import streamlit as st
 import pandas as pd
-import pymysql
 import plotly.express as px
 import datetime
 import calendar
 import numpy as np
+from app_common import (
+    get_db_connection, load_data, ensure_tables, apply_morandi_table_style,
+    get_payment_method_names, auto_generate_fixed_expenses, EXCHANGE_RATES,
+)
 
 # --- 1. page configuration ---
 st.set_page_config(
@@ -16,66 +19,16 @@ st.set_page_config(
 st.title("📊 AI Expense Assistant | 個人財務儀表板")
 st.markdown("---")
 
-# --- 2. database configuration ---
-DB_CONFIG = dict(st.secrets["mysql"])
+# --- 2. schema provisioning & recurring fixed expenses ---
+today_for_check = datetime.date.today()
+if st.session_state.get("_fixed_expense_check_date") != today_for_check:
+    ensure_tables()
+    newly_generated = auto_generate_fixed_expenses()
+    st.session_state["_fixed_expense_check_date"] = today_for_check
+    if newly_generated:
+        st.cache_data.clear()
 
-PAYMENT_METHODS = [
-    "永豐信用卡 (SinoPac)", 
-    "Revolut", 
-    "BNP Paribas", 
-    "現金/其他 (Cash/Other)"
-]
-
-EXCHANGE_RATES = {
-    'TWD': 1.0,      
-    'CAD': 23.5,     
-    'EUR': 34.8,     
-    'USD': 32.2,     
-    'JPY': 0.21      
-}
-
-def get_db_connection():
-    config = DB_CONFIG.copy()
-    if isinstance(config['password'], str):
-        config['password'] = config['password'].encode('utf-8').decode('latin-1')
-    return pymysql.connect(
-        **config,
-        ssl_verify_cert=True,
-        charset='utf8mb4',
-        cursorclass=pymysql.cursors.DictCursor 
-    )
-
-@st.cache_data(ttl=5)
-def load_data():
-    try:
-        config = DB_CONFIG.copy()
-        if isinstance(config['password'], str):
-            config['password'] = config['password'].encode('utf-8').decode('latin-1')
-
-        conn = pymysql.connect(
-            **config,
-            ssl_verify_cert=True,
-            charset='utf8mb4'
-        )
-
-        with conn.cursor() as cursor:
-            cursor.execute("USE test;")
-            query = "SELECT * FROM test.daily_expenses WHERE amount_original != 0 ORDER BY transaction_date DESC;"
-            df = pd.read_sql(query, conn)
-        conn.close()
-
-        if not df.empty:
-            df['amount_original'] = pd.to_numeric(df['amount_original'], errors='coerce').fillna(0)
-            if 'payment_method' not in df.columns:
-                df['payment_method'] = "永豐信用卡 (SinoPac)"
-            else:
-                df['payment_method'] = df['payment_method'].fillna("永豐信用卡 (SinoPac)")
-
-        return df
-
-    except Exception as e:
-        st.error(f"❌ Failed to connect to database 資料庫連線失敗: {e}")
-        return pd.DataFrame()
+PAYMENT_METHODS = get_payment_method_names()
 
 def get_budget_from_db(currency):
     try:
@@ -98,25 +51,6 @@ def save_budget_to_db(currency, amount):
         conn.close()
     except Exception as e:
         st.error(f"❌ Failed to save budget 儲存預算失敗: {e}")
-
-def apply_morandi_table_style(styler):
-    styler.set_properties(**{
-        'background-color': "#F5EEE5",  
-        'color': '#4A4643',             
-        'border-bottom': '1px solid #E8E4D9' 
-    })
-    styler.set_table_styles([
-        {
-            'selector': 'th',  
-            'props': [
-                ('background-color', "#C4D6D9"), 
-                ('color', '#4A4643'),            
-                ('font-weight', 'bold'),         
-                ('border-bottom', '1px solid #8B9DA3') 
-            ]
-        }
-    ])
-    return styler
 
 ## --- 3. conduct data reading and cleaning ---
 df = load_data()
