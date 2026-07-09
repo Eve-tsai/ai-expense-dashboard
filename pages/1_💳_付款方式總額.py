@@ -5,9 +5,11 @@ import plotly.express as px
 from app_common import (
     load_data, ensure_tables, apply_morandi_table_style, EXCHANGE_RATES,
     CATEGORY_DISPLAY_MAP, get_payment_methods_df, get_statement_cycle,
+    check_password,
 )
 
 st.set_page_config(page_title="付款方式總額", page_icon="💳", layout="wide")
+check_password()
 st.title("💳 Payment Method Totals | 付款方式總額")
 st.markdown("---")
 

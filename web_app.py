@@ -7,6 +7,7 @@ import numpy as np
 from app_common import (
     get_db_connection, load_data, ensure_tables, apply_morandi_table_style,
     get_payment_method_names, auto_generate_fixed_expenses, EXCHANGE_RATES,
+    check_password,
 )
 
 # --- 1. page configuration ---
@@ -15,6 +16,8 @@ st.set_page_config(
     page_icon="💰",
     layout="wide"
 )
+
+check_password()
 
 st.title("📊 AI Expense Assistant | 個人財務儀表板")
 st.markdown("---")

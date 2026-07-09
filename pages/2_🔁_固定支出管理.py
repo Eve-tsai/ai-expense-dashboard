@@ -7,10 +7,11 @@ from app_common import (
     update_fixed_expense, delete_fixed_expense, get_generated_year_months,
     add_payment_method, update_payment_method, delete_payment_method,
     is_payment_method_in_use, auto_generate_fixed_expenses, CATEGORY_OPTIONS,
-    CATEGORY_DISPLAY_MAP,
+    CATEGORY_DISPLAY_MAP, check_password,
 )
 
 st.set_page_config(page_title="固定支出管理", page_icon="🔁", layout="wide")
+check_password()
 st.title("🔁 Fixed Expenses & Cards | 固定支出與卡片管理")
 st.markdown("---")
 

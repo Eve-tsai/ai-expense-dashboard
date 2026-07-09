@@ -38,6 +38,32 @@ FALLBACK_PAYMENT_METHODS = [
 ]
 
 
+def check_password():
+    """Gate access behind a shared password stored in st.secrets['app_password'].
+    Call this at the top of every page (after st.set_page_config). Stops the
+    script for unauthenticated users; authentication persists for the browser
+    session across all pages once entered correctly."""
+    if st.session_state.get("authenticated", False):
+        return
+
+    def password_entered():
+        if st.session_state.get("password_input", "") == st.secrets.get("app_password", None):
+            st.session_state["authenticated"] = True
+        else:
+            st.session_state["authenticated"] = False
+        st.session_state["password_input"] = ""
+
+    st.text_input(
+        "🔒 請輸入密碼才能查看 (Enter password to view)",
+        type="password",
+        on_change=password_entered,
+        key="password_input",
+    )
+    if st.session_state.get("authenticated") is False:
+        st.error("❌ 密碼錯誤 Incorrect password")
+    st.stop()
+
+
 def get_db_connection():
     config = DB_CONFIG.copy()
     if isinstance(config['password'], str):
